@@ -107,7 +107,7 @@ export function TrendBars({
             key={k.key}
             dataKey={k.key}
             name={k.label}
-            stackId={stacked ? "a" : undefined}
+            {...(stacked ? { stackId: "a" } : {})}
             fill={palette[i % palette.length]}
             radius={stacked ? [0, 0, 0, 0] : [3, 3, 0, 0]}
             maxBarSize={38}
