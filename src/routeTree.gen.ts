@@ -10,33 +10,206 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AskRouteImport } from './routes/ask'
+import { Route as CompareRouteImport } from './routes/compare'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ResearchRouteImport } from './routes/research'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as UploadRouteImport } from './routes/upload'
+import { Route as CompaniesIndexRouteImport } from './routes/companies.index'
+import { Route as CompaniesSlugRouteImport } from './routes/companies.$slug'
+import { Route as DocumentsIndexRouteImport } from './routes/documents.index'
+import { Route as DocumentsIdRouteImport } from './routes/documents.$id'
+import { Route as SectorsIndexRouteImport } from './routes/sectors.index'
+import { Route as SectorsSlugRouteImport } from './routes/sectors.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AskRoute = AskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchRoute = ResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UploadRoute = UploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompaniesIndexRoute = CompaniesIndexRouteImport.update({
+  id: '/companies/',
+  path: '/companies/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompaniesSlugRoute = CompaniesSlugRouteImport.update({
+  id: '/companies/$slug',
+  path: '/companies/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsIndexRoute = DocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocumentsIdRoute = DocumentsIdRouteImport.update({
+  id: '/documents/$id',
+  path: '/documents/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SectorsIndexRoute = SectorsIndexRouteImport.update({
+  id: '/sectors/',
+  path: '/sectors/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SectorsSlugRoute = SectorsSlugRouteImport.update({
+  id: '/sectors/$slug',
+  path: '/sectors/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
+  '/compare': typeof CompareRoute
+  '/dashboard': typeof DashboardRoute
+  '/reports': typeof ReportsRoute
+  '/research': typeof ResearchRoute
+  '/settings': typeof SettingsRoute
+  '/upload': typeof UploadRoute
+  '/companies/$slug': typeof CompaniesSlugRoute
+  '/documents/$id': typeof DocumentsIdRoute
+  '/sectors/$slug': typeof SectorsSlugRoute
+  '/companies/': typeof CompaniesIndexRoute
+  '/documents/': typeof DocumentsIndexRoute
+  '/sectors/': typeof SectorsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
+  '/compare': typeof CompareRoute
+  '/dashboard': typeof DashboardRoute
+  '/reports': typeof ReportsRoute
+  '/research': typeof ResearchRoute
+  '/settings': typeof SettingsRoute
+  '/upload': typeof UploadRoute
+  '/companies/$slug': typeof CompaniesSlugRoute
+  '/documents/$id': typeof DocumentsIdRoute
+  '/sectors/$slug': typeof SectorsSlugRoute
+  '/companies': typeof CompaniesIndexRoute
+  '/documents': typeof DocumentsIndexRoute
+  '/sectors': typeof SectorsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ask': typeof AskRoute
+  '/compare': typeof CompareRoute
+  '/dashboard': typeof DashboardRoute
+  '/reports': typeof ReportsRoute
+  '/research': typeof ResearchRoute
+  '/settings': typeof SettingsRoute
+  '/upload': typeof UploadRoute
+  '/companies/$slug': typeof CompaniesSlugRoute
+  '/documents/$id': typeof DocumentsIdRoute
+  '/sectors/$slug': typeof SectorsSlugRoute
+  '/companies/': typeof CompaniesIndexRoute
+  '/documents/': typeof DocumentsIndexRoute
+  '/sectors/': typeof SectorsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/ask'
+    | '/compare'
+    | '/dashboard'
+    | '/reports'
+    | '/research'
+    | '/settings'
+    | '/upload'
+    | '/companies/$slug'
+    | '/documents/$id'
+    | '/sectors/$slug'
+    | '/companies/'
+    | '/documents/'
+    | '/sectors/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/ask'
+    | '/compare'
+    | '/dashboard'
+    | '/reports'
+    | '/research'
+    | '/settings'
+    | '/upload'
+    | '/companies/$slug'
+    | '/documents/$id'
+    | '/sectors/$slug'
+    | '/companies'
+    | '/documents'
+    | '/sectors'
+  id:
+    | '__root__'
+    | '/'
+    | '/ask'
+    | '/compare'
+    | '/dashboard'
+    | '/reports'
+    | '/research'
+    | '/settings'
+    | '/upload'
+    | '/companies/$slug'
+    | '/documents/$id'
+    | '/sectors/$slug'
+    | '/companies/'
+    | '/documents/'
+    | '/sectors/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AskRoute: typeof AskRoute
+  CompareRoute: typeof CompareRoute
+  DashboardRoute: typeof DashboardRoute
+  ReportsRoute: typeof ReportsRoute
+  ResearchRoute: typeof ResearchRoute
+  SettingsRoute: typeof SettingsRoute
+  UploadRoute: typeof UploadRoute
+  CompaniesSlugRoute: typeof CompaniesSlugRoute
+  DocumentsIdRoute: typeof DocumentsIdRoute
+  SectorsSlugRoute: typeof SectorsSlugRoute
+  CompaniesIndexRoute: typeof CompaniesIndexRoute
+  DocumentsIndexRoute: typeof DocumentsIndexRoute
+  SectorsIndexRoute: typeof SectorsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +221,115 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ask': {
+      id: '/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/research': {
+      id: '/research'
+      path: '/research'
+      fullPath: '/research'
+      preLoaderRoute: typeof ResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/upload': {
+      id: '/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof UploadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/companies/': {
+      id: '/companies/'
+      path: '/companies'
+      fullPath: '/companies/'
+      preLoaderRoute: typeof CompaniesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/companies/$slug': {
+      id: '/companies/$slug'
+      path: '/companies/$slug'
+      fullPath: '/companies/$slug'
+      preLoaderRoute: typeof CompaniesSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents/': {
+      id: '/documents/'
+      path: '/documents'
+      fullPath: '/documents/'
+      preLoaderRoute: typeof DocumentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/documents/$id': {
+      id: '/documents/$id'
+      path: '/documents/$id'
+      fullPath: '/documents/$id'
+      preLoaderRoute: typeof DocumentsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sectors/': {
+      id: '/sectors/'
+      path: '/sectors'
+      fullPath: '/sectors/'
+      preLoaderRoute: typeof SectorsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sectors/$slug': {
+      id: '/sectors/$slug'
+      path: '/sectors/$slug'
+      fullPath: '/sectors/$slug'
+      preLoaderRoute: typeof SectorsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AskRoute: AskRoute,
+  CompareRoute: CompareRoute,
+  DashboardRoute: DashboardRoute,
+  ReportsRoute: ReportsRoute,
+  ResearchRoute: ResearchRoute,
+  SettingsRoute: SettingsRoute,
+  UploadRoute: UploadRoute,
+  CompaniesSlugRoute: CompaniesSlugRoute,
+  DocumentsIdRoute: DocumentsIdRoute,
+  SectorsSlugRoute: SectorsSlugRoute,
+  CompaniesIndexRoute: CompaniesIndexRoute,
+  DocumentsIndexRoute: DocumentsIndexRoute,
+  SectorsIndexRoute: SectorsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
