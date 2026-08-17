@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as UploadRouteImport } from './routes/upload'
 import { Route as CompaniesIndexRouteImport } from './routes/companies.index'
 import { Route as CompaniesSlugRouteImport } from './routes/companies.$slug'
 
@@ -19,9 +21,19 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UploadRoute = UploadRouteImport.update({
+  id: '/upload',
+  path: '/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompaniesIndexRoute = CompaniesIndexRouteImport.update({
@@ -37,34 +49,61 @@ const CompaniesSlugRoute = CompaniesSlugRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
+  '/upload': typeof UploadRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/companies/': typeof CompaniesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
+  '/upload': typeof UploadRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/companies': typeof CompaniesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/compare': typeof CompareRoute
   '/dashboard': typeof DashboardRoute
+  '/upload': typeof UploadRoute
   '/companies/$slug': typeof CompaniesSlugRoute
   '/companies/': typeof CompaniesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/companies/$slug' | '/companies/'
+  fullPaths:
+    | '/'
+    | '/compare'
+    | '/dashboard'
+    | '/upload'
+    | '/companies/$slug'
+    | '/companies/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/companies/$slug' | '/companies'
-  id: '__root__' | '/' | '/dashboard' | '/companies/$slug' | '/companies/'
+  to:
+    | '/'
+    | '/compare'
+    | '/dashboard'
+    | '/upload'
+    | '/companies/$slug'
+    | '/companies'
+  id:
+    | '__root__'
+    | '/'
+    | '/compare'
+    | '/dashboard'
+    | '/upload'
+    | '/companies/$slug'
+    | '/companies/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CompareRoute: typeof CompareRoute
   DashboardRoute: typeof DashboardRoute
+  UploadRoute: typeof UploadRoute
   CompaniesSlugRoute: typeof CompaniesSlugRoute
   CompaniesIndexRoute: typeof CompaniesIndexRoute
 }
@@ -78,11 +117,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/upload': {
+      id: '/upload'
+      path: '/upload'
+      fullPath: '/upload'
+      preLoaderRoute: typeof UploadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/companies/': {
@@ -104,7 +157,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CompareRoute: CompareRoute,
   DashboardRoute: DashboardRoute,
+  UploadRoute: UploadRoute,
   CompaniesSlugRoute: CompaniesSlugRoute,
   CompaniesIndexRoute: CompaniesIndexRoute,
 }
