@@ -54,7 +54,7 @@ export function TrendLine({
   keys,
   height = 240,
 }: {
-  data: Record<string, unknown>[];
+  data: object[];
   keys: { key: string; label: string }[];
   height?: number;
 }) {
@@ -89,7 +89,7 @@ export function TrendBars({
   height = 240,
   stacked = false,
 }: {
-  data: Record<string, unknown>[];
+  data: object[];
   keys: { key: string; label: string }[];
   height?: number;
   stacked?: boolean;
@@ -123,7 +123,7 @@ export function CompositionArea({
   keys,
   height = 240,
 }: {
-  data: Record<string, unknown>[];
+  data: object[];
   keys: { key: string; label: string }[];
   height?: number;
 }) {
@@ -283,7 +283,7 @@ export function RiskMatrix({
   );
 }
 
-export function MiniSpark({ data, dataKey }: { data: Record<string, unknown>[]; dataKey: string }) {
+export function MiniSpark({ data, dataKey }: { data: object[]; dataKey: string }) {
   return (
     <ResponsiveContainer width="100%" height={44}>
       <LineChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
