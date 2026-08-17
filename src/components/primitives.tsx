@@ -148,7 +148,7 @@ export function WhyRow({ why, source }: { why: string; source: string }) {
       </summary>
       <div className="mt-2 space-y-2 rounded-md border border-border bg-surface-2 p-3">
         <p className="text-xs leading-relaxed text-muted-foreground">{why}</p>
-        <Citation doc={source.split(", p.")[0]} page={Number(source.split("p. ")[1] ?? 1)} />
+        <Citation doc={source.split(", p.")[0] ?? source} page={Number(source.split("p. ")[1] ?? 1)} />
       </div>
     </details>
   );
