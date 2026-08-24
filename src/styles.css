@@ -5,9 +5,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * FinSight design system — premium fintech research terminal.
- * Deep slate-navy surfaces, signal teal accent, amber/red risk signals.
- * All colors are oklch semantic tokens. Never hardcode colors in components.
+ * FinSight design system — light financial-data app (Screener / Stripe Dashboard feel).
+ * Off-white paper background, near-black text, single deep-blue accent (#1D4ED8).
+ * Semantic red/amber/green used ONLY for risk severity and positive/negative deltas.
+ * All colors are semantic tokens. Never hardcode colors in components.
  */
 
 @theme inline {
@@ -16,7 +17,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
-  --font-sans: "Inter Tight", system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -61,6 +62,57 @@
 :root {
   --radius: 0.5rem;
 
+  --background: #fafaf8;
+  --foreground: #1a1a1a;
+  --surface: #ffffff;
+  --surface-2: #f4f4f0;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #1d4ed8;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1ec;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f1f1ec;
+  --muted-foreground: #60605a;
+  --accent: #1d4ed8;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --warning: #d97706;
+  --warning-foreground: #ffffff;
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+  --border: #e4e4dd;
+  --input: #e4e4dd;
+  --ring: #1d4ed8;
+  --chart-1: #1d4ed8;
+  --chart-2: #16a34a;
+  --chart-3: #d97706;
+  --chart-4: #7c3aed;
+  --chart-5: #dc2626;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #1d4ed8;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f1ec;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #e4e4dd;
+  --sidebar-ring: #1d4ed8;
+
+  --grad-hero: radial-gradient(
+      ellipse 80% 60% at 50% -10%,
+      rgb(29 78 216 / 0.07),
+      transparent 70%
+    ),
+    radial-gradient(ellipse 60% 50% at 90% 10%, rgb(22 163 74 / 0.05), transparent 70%);
+  --grad-panel: linear-gradient(180deg, #ffffff, #fdfdfa);
+  --grad-accent: linear-gradient(100deg, #1d4ed8, #3b82f6);
+  --shadow-panel: 0 1px 2px 0 rgb(26 26 26 / 0.05);
+}
+
+.dark {
   --background: oklch(0.17 0.021 255);
   --foreground: oklch(0.95 0.008 250);
   --surface: oklch(0.21 0.022 256);
@@ -111,47 +163,6 @@
   --shadow-panel: 0 1px 0 0 oklch(1 0 0 / 0.04) inset, 0 18px 40px -24px oklch(0 0 0 / 0.8);
 }
 
-.light {
-  --background: oklch(0.985 0.004 250);
-  --foreground: oklch(0.21 0.02 256);
-  --surface: oklch(1 0 0);
-  --surface-2: oklch(0.965 0.005 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.02 256);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.02 256);
-  --primary: oklch(0.55 0.11 180);
-  --primary-foreground: oklch(0.99 0.005 180);
-  --secondary: oklch(0.95 0.006 250);
-  --secondary-foreground: oklch(0.25 0.02 256);
-  --muted: oklch(0.95 0.006 250);
-  --muted-foreground: oklch(0.5 0.015 255);
-  --accent: oklch(0.55 0.13 250);
-  --accent-foreground: oklch(0.99 0.005 250);
-  --destructive: oklch(0.55 0.2 25);
-  --destructive-foreground: oklch(0.99 0.005 25);
-  --warning: oklch(0.68 0.14 70);
-  --warning-foreground: oklch(0.99 0.005 70);
-  --success: oklch(0.55 0.13 158);
-  --success-foreground: oklch(0.99 0.005 158);
-  --border: oklch(0.9 0.008 250);
-  --input: oklch(0.9 0.008 250);
-  --ring: oklch(0.55 0.11 180);
-  --sidebar: oklch(1 0 0);
-  --sidebar-foreground: oklch(0.21 0.02 256);
-  --sidebar-accent: oklch(0.95 0.006 250);
-  --sidebar-border: oklch(0.9 0.008 250);
-
-  --grad-hero: radial-gradient(
-      ellipse 80% 60% at 50% -10%,
-      oklch(0.55 0.11 180 / 0.12),
-      transparent 70%
-    ),
-    radial-gradient(ellipse 60% 50% at 90% 10%, oklch(0.55 0.13 250 / 0.08), transparent 70%);
-  --grad-panel: linear-gradient(160deg, oklch(1 0 0), oklch(0.97 0.005 250));
-  --shadow-panel: 0 1px 2px 0 oklch(0.2 0.02 256 / 0.06), 0 12px 30px -22px oklch(0.2 0.02 256 / 0.4);
-}
-
 @layer base {
   * {
     border-color: var(--color-border);
@@ -194,7 +205,7 @@
   background-image: linear-gradient(var(--color-border) 1px, transparent 1px),
     linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
   background-size: 56px 56px;
-  opacity: 0.25;
+  opacity: 0.35;
 }
 
 @utility num {
