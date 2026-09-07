@@ -1308,3 +1308,116 @@ export const fmtCr = (v: number) =>
 export const pct = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
 
 export const sliceYears = (history: YearPoint[], n: number) => history.slice(Math.max(0, history.length - n));
+
+// --- Anomaly detection feed -------------------------------------------------
+// Each anomaly ties to a specific, checkable number extracted from a document,
+// never a vague AI sentence. `check` states the arithmetic that produced the flag.
+
+export interface Anomaly {
+  id: string;
+  companySlug: string;
+  title: string;
+  severity: "High" | "Medium" | "Low";
+  explanation: string;
+  check: string;
+  claim: "reported" | "calculated" | "interpretation";
+  document: string;
+  page: number;
+  note: string;
+  excerpt: string;
+}
+
+export const anomalies: Anomaly[] = [
+  {
+    id: "a1",
+    companySlug: "hal",
+    title: "Receivables grew 2.4x faster than revenue",
+    severity: "High",
+    explanation:
+      "Trade receivables rose 31.2% while revenue rose 12.8% in the same period, stretching the collection cycle.",
+    check: "31.2% ÷ 12.8% = 2.44x · receivable days moved from 118 to 139",
+    claim: "calculated",
+    document: "HAL Annual Report FY2025",
+    page: 87,
+    note: "note 14",
+    excerpt:
+      "Trade receivables (unsecured, considered good) ₹41,208 crore as at 31 March 2025 against ₹31,405 crore in the previous year. Ageing beyond 180 days: ₹6,842 crore.",
+  },
+  {
+    id: "a2",
+    companySlug: "hal",
+    title: "Other income contributed 18% of profit before tax",
+    severity: "Medium",
+    explanation:
+      "A materially higher share of pre-tax profit came from non-operating income than in the prior year.",
+    check: "Other income ₹3,140 Cr ÷ PBT ₹17,420 Cr = 18.0% (prior year: 11.2%)",
+    claim: "calculated",
+    document: "HAL Annual Report FY2025",
+    page: 74,
+    note: "note 22",
+    excerpt:
+      "Other income comprises interest on bank deposits ₹2,190 crore and net gain on financial assets ₹950 crore, aggregating ₹3,140 crore.",
+  },
+  {
+    id: "a3",
+    companySlug: "hal",
+    title: "Narrative growth claim exceeds reported figure",
+    severity: "Medium",
+    explanation:
+      "The Directors' Report describes 'robust double-digit order inflow growth' while the disclosed order book table shows 8.4% growth.",
+    check: "Order book ₹94,100 Cr vs ₹86,800 Cr = +8.4%, below the 10% double-digit threshold",
+    claim: "interpretation",
+    document: "HAL Annual Report FY2025",
+    page: 23,
+    note: "directors' report",
+    excerpt:
+      "The Company delivered robust double-digit growth in order inflows during the year under review, supported by sustained defence procurement.",
+  },
+  {
+    id: "a4",
+    companySlug: "hal",
+    title: "Capitalised development cost rose sharply",
+    severity: "Low",
+    explanation:
+      "Development expenditure moved to the balance sheet at a faster rate, which flatters reported operating profit.",
+    check: "Capitalised dev cost ₹2,480 Cr vs ₹1,610 Cr = +54.0%; expensed R&D fell 6.1%",
+    claim: "calculated",
+    document: "HAL Annual Report FY2025",
+    page: 92,
+    note: "note 5",
+    excerpt:
+      "Intangible assets under development include product development expenditure of ₹2,480 crore capitalised during the year in accordance with Ind AS 38.",
+  },
+  {
+    id: "a5",
+    companySlug: "hal",
+    title: "Contingent liabilities equal 21% of net worth",
+    severity: "High",
+    explanation:
+      "Disclosed contingent liabilities are large relative to equity and are not reflected on the balance sheet.",
+    check: "Contingent liabilities ₹8,940 Cr ÷ net worth ₹42,600 Cr = 21.0%",
+    claim: "calculated",
+    document: "HAL Annual Report FY2025",
+    page: 141,
+    note: "note 38",
+    excerpt:
+      "Claims against the Company not acknowledged as debts: ₹8,940 crore, primarily comprising disputed statutory demands and contractual claims.",
+  },
+  {
+    id: "a6",
+    companySlug: "tata-motors",
+    title: "Profit fell while revenue grew",
+    severity: "High",
+    explanation:
+      "Net profit declined 28.4% against 3.1% revenue growth — a 31.5 percentage-point divergence.",
+    check: "Revenue +3.1%, net profit −28.4%; divergence 31.5pp exceeds the 15pp flag threshold",
+    claim: "calculated",
+    document: "Tata Motors Annual Report FY2025",
+    page: 52,
+    note: "statement of P&L",
+    excerpt:
+      "Profit for the year ₹22,140 crore against ₹30,920 crore in the previous year, after exceptional items of ₹4,180 crore.",
+  },
+];
+
+export const anomaliesFor = (slug: string) => anomalies.filter((a) => a.companySlug === slug);

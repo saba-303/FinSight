@@ -10,30 +10,48 @@ import {
   ScrollText,
   Settings,
   Search,
-  Bell,
   Sparkles,
+  ShieldAlert,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { GlobalSearch } from "./GlobalSearch";
 import { Badge } from "@/components/ui/badge";
 
-const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/companies", label: "Companies", icon: Building2 },
-  { to: "/upload", label: "Upload Report", icon: Upload },
-  { to: "/compare", label: "Compare", icon: GitCompareArrows },
-  { to: "/sectors", label: "Sector Intelligence", icon: Layers },
-  { to: "/documents", label: "My Documents", icon: FileText },
-  { to: "/research", label: "Research Workspace", icon: FlaskConical },
-  { to: "/reports", label: "Reports", icon: ScrollText },
-  { to: "/settings", label: "Settings", icon: Settings },
+const navGroups = [
+  {
+    label: "Analyse",
+    items: [
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/companies", label: "Search / Upload", icon: Search },
+      { to: "/ask", label: "Ask AI", icon: Sparkles },
+      { to: "/compare", label: "Peer Comparison", icon: GitCompareArrows },
+    ],
+  },
+  {
+    label: "Library",
+    items: [
+      { to: "/documents", label: "Documents", icon: FileText },
+      { to: "/sectors", label: "Sectors", icon: Layers },
+      { to: "/research", label: "Research", icon: FlaskConical },
+      { to: "/reports", label: "Reports", icon: ScrollText },
+    ],
+  },
+  {
+    label: "Account",
+    items: [{ to: "/settings", label: "Settings", icon: Settings }],
+  },
 ] as const;
 
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <Link to="/" className="flex items-center gap-2.5">
-      <span className="relative flex size-8 items-center justify-center rounded-md bg-primary/15 ring-1 ring-primary/30">
-        <svg viewBox="0 0 24 24" className="size-4.5 text-primary" fill="none" strokeWidth="2.2">
+      <span className="relative flex size-8 items-center justify-center rounded-md bg-primary">
+        <svg
+          viewBox="0 0 24 24"
+          className="size-4.5 text-primary-foreground"
+          fill="none"
+          strokeWidth="2.2"
+        >
           <path d="M3 17l5-6 4 4 6-9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" />
           <circle cx="18" cy="6" r="2" fill="currentColor" stroke="none" />
         </svg>
@@ -47,69 +65,123 @@ export function Logo({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  return (
+    <nav className="space-y-6">
+      {navGroups.map((group) => (
+        <div key={group.label}>
+          <p className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {group.label}
+          </p>
+          <ul className="space-y-0.5">
+            {group.items.map((item) => {
+              const active = pathname === item.to || pathname.startsWith(item.to + "/");
+              return (
+                <li key={item.to}>
+                  <Link
+                    to={item.to}
+                    onClick={onNavigate}
+                    className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors ${
+                      active
+                        ? "bg-primary/[0.08] text-primary"
+                        : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                    }`}
+                  >
+                    <item.icon className="size-4" />
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </nav>
+  );
+}
+
+export function AppShell({ children }: { children: ReactNode }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-40 border-b border-border bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-[1600px] items-center gap-4 px-4 lg:px-6">
-          <Logo />
-          <div className="ml-2 hidden flex-1 items-center xl:flex">
-            <GlobalSearch />
+      <div className="flex">
+        {/* Sidebar */}
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-border bg-sidebar lg:flex">
+          <div className="flex h-14 items-center border-b border-border px-4">
+            <Logo />
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Link
-              to="/ask"
-              className="hidden items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/15 sm:flex"
-            >
-              <Sparkles className="size-3.5" /> Ask FinSight
-            </Link>
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="relative rounded-md p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-            >
-              <Bell className="size-4" />
-              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary" />
-            </button>
-            <div className="flex size-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold">
-              SB
+          <div className="flex-1 overflow-y-auto p-3">
+            <SidebarNav />
+          </div>
+          <div className="border-t border-border p-3">
+            <div className="rounded-md border border-border bg-surface-2 p-3">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <ShieldAlert className="size-3.5" /> Prototype
+              </div>
+              <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+                Sample data only. Every figure carries a source citation.
+              </p>
             </div>
           </div>
-        </div>
-        <nav className="mx-auto flex max-w-[1600px] items-center gap-1 overflow-x-auto px-4 pb-0 lg:px-6">
-          {nav.map((item) => {
-            const active = pathname === item.to || pathname.startsWith(item.to + "/");
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13px] font-medium transition-colors ${
-                  active
-                    ? "border-primary text-foreground"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
-                }`}
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur-xl">
+            <div className="flex h-14 items-center gap-3 px-4 lg:px-6">
+              <button
+                type="button"
+                aria-label="Toggle navigation"
+                onClick={() => setMobileOpen((v) => !v)}
+                className="rounded-md border border-border p-2 lg:hidden"
               >
-                <item.icon className="size-3.5" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </header>
+                <LayoutDashboard className="size-4" />
+              </button>
+              <div className="lg:hidden">
+                <Logo compact />
+              </div>
+              <div className="hidden min-w-0 flex-1 md:flex">
+                <GlobalSearch />
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <Link
+                  to="/upload"
+                  className="hidden items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium transition-colors hover:bg-secondary sm:flex"
+                >
+                  <Upload className="size-3.5" /> Upload
+                </Link>
+                <Link
+                  to="/ask"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+                >
+                  <Sparkles className="size-3.5" /> Ask AI
+                </Link>
+                <div className="flex size-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold">
+                  SB
+                </div>
+              </div>
+            </div>
+            {mobileOpen && (
+              <div className="border-t border-border p-3 lg:hidden">
+                <SidebarNav onNavigate={() => setMobileOpen(false)} />
+              </div>
+            )}
+          </header>
 
-      <main className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6">{children}</main>
+          <main className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8">{children}</main>
 
-      <footer className="mt-10 border-t border-border">
-        <div className="mx-auto max-w-[1600px] px-4 py-6 lg:px-6">
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            FinSight is an educational and analytical research platform. Information and AI-generated
-            insights are provided for research purposes and should not be considered financial or
-            investment advice. All figures shown in this prototype are sample data.
-          </p>
+          <footer className="mt-10 border-t border-border">
+            <div className="mx-auto max-w-[1400px] px-4 py-6 lg:px-8">
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                FinSight is an educational and analytical research prototype. AI-generated insights are
+                provided for research purposes and are not financial or investment advice. All figures
+                shown are sample data.
+              </p>
+            </div>
+          </footer>
         </div>
-      </footer>
+      </div>
     </div>
   );
 }
@@ -142,3 +214,5 @@ export function PageHeader({
 export function SearchIconStub() {
   return <Search className="size-4" />;
 }
+
+export { Building2 };
