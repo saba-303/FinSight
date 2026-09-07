@@ -62,39 +62,72 @@ export function StatCard({
   );
 }
 
-export function ProvenanceTag({
-  kind,
-}: {
-  kind: "reported" | "calculated" | "interpretation";
-}) {
+export type ClaimKind = "reported" | "calculated" | "interpretation";
+
+/**
+ * Claim classification — the methodological differentiator.
+ * Fact = read verbatim from the document.
+ * Calculation = computed programmatically from extracted statement lines.
+ * Inference = model interpretation, never a number.
+ */
+export function ProvenanceTag({ kind }: { kind: ClaimKind }) {
   const map = {
-    reported: { label: "Reported Fact", cls: "border-accent/40 bg-accent/10 text-accent" },
-    calculated: { label: "Calculated Metric", cls: "border-primary/40 bg-primary/10 text-primary" },
+    reported: {
+      label: "Fact",
+      hint: "Read verbatim from the source document",
+      cls: "border-success/30 bg-success/10 text-success",
+    },
+    calculated: {
+      label: "Calculation",
+      hint: "Computed programmatically from extracted statement lines",
+      cls: "border-primary/30 bg-primary/10 text-primary",
+    },
     interpretation: {
-      label: "AI Interpretation",
-      cls: "border-warning/40 bg-warning/10 text-warning",
+      label: "Inference",
+      hint: "Model interpretation — not a reported figure",
+      cls: "border-warning/30 bg-warning/10 text-warning",
     },
   } as const;
   const m = map[kind];
   return (
     <span
-      className={`rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${m.cls}`}
+      title={m.hint}
+      className={`inline-flex shrink-0 items-center rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${m.cls}`}
     >
       {m.label}
     </span>
   );
 }
 
-export function Citation({ doc, page }: { doc: string; page: number | number[] }) {
+/**
+ * The signature element: every AI-generated number or claim carries a
+ * clickable source tag. Visually identical everywhere in the product.
+ */
+export function Citation({
+  doc,
+  page,
+  note,
+  onOpen,
+}: {
+  doc: string;
+  page: number | number[];
+  note?: string;
+  onOpen?: () => void;
+}) {
   const pages = Array.isArray(page) ? page.join(", ") : page;
   return (
     <button
       type="button"
-      title="Open source page (prototype: document viewer not connected)"
-      className="inline-flex items-center gap-1 rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[11px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+      onClick={onOpen}
+      title={`Source: ${doc}, page ${pages}${note ? `, ${note}` : ""}`}
+      className="inline-flex max-w-full items-center gap-1 rounded border border-primary/25 bg-primary/[0.06] px-1.5 py-0.5 text-[11px] font-medium text-primary transition-colors hover:border-primary/60 hover:bg-primary/12"
     >
-      <FileText className="size-3" />
-      {doc} · p. {pages}
+      <FileText className="size-3 shrink-0" />
+      <span className="num truncate">
+        pg. {pages}
+        {note ? `, ${note}` : ""}
+      </span>
+      <span className="truncate text-primary/70">· {doc}</span>
     </button>
   );
 }
