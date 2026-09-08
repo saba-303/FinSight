@@ -5,6 +5,7 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  ComposedChart,
   Legend,
   Line,
   LineChart,
@@ -300,3 +301,49 @@ export function MiniSpark({ data, dataKey }: { data: object[]; dataKey: string }
 }
 
 export const chartPalette = palette;
+
+/** Revenue bars with a margin % line on a secondary axis. */
+export function RevenueMarginChart({
+  data,
+  height = 280,
+}: {
+  data: object[];
+  height?: number;
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <ComposedChart data={data} margin={{ top: 8, right: 8, left: -8, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+        <XAxis dataKey="year" {...axis} />
+        <YAxis yAxisId="left" {...axis} width={66} />
+        <YAxis
+          yAxisId="right"
+          orientation="right"
+          {...axis}
+          width={46}
+          unit="%"
+          domain={[0, "dataMax + 6"]}
+        />
+        <Tooltip {...tooltipStyle} cursor={{ fill: "var(--color-secondary)", opacity: 0.35 }} />
+        <Legend wrapperStyle={{ fontSize: 11 }} />
+        <Bar
+          yAxisId="left"
+          dataKey="revenue"
+          name="Revenue (₹ Cr)"
+          fill="var(--color-chart-1)"
+          radius={[3, 3, 0, 0]}
+          maxBarSize={44}
+        />
+        <Line
+          yAxisId="right"
+          type="monotone"
+          dataKey="opMargin"
+          name="Operating margin %"
+          stroke="var(--color-chart-3)"
+          strokeWidth={2}
+          dot={{ r: 3, strokeWidth: 0, fill: "var(--color-chart-3)" }}
+        />
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}

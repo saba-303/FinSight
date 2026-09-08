@@ -1,147 +1,141 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, PageHeader } from "@/components/AppShell";
-import { Panel, Notice } from "@/components/primitives";
-import { AskFinSight, type CannedAnswer } from "@/components/AskFinSight";
-import { cagr, getCompany, sliceYears } from "@/data/finsight";
+import { Panel, Notice, ProvenanceTag } from "@/components/primitives";
+import { AskChat, type ChatAnswer } from "@/components/AskChat";
 
 export const Route = createFileRoute("/ask")({
   head: () => ({
     meta: [
-      { title: "Ask FinSight — Natural Language Financial Queries" },
+      { title: "Ask AI — Evidence-Backed Report Answers | FinSight" },
       {
         name: "description",
         content:
-          "Ask financial, business, risk, management and comparison questions in natural language and receive structured answers with page-level source citations.",
+          "Ask questions about an annual report and get answers labelled Fact, Calculation or Inference, each with the exact page and note it was grounded in.",
       },
-      { property: "og:title", content: "Ask FinSight" },
+      { property: "og:title", content: "Ask AI — FinSight" },
       {
         property: "og:description",
-        content: "Structured, evidence-grounded answers to natural-language questions about reports.",
+        content: "Answers with claim-type badges and a live evidence panel showing the source page.",
       },
     ],
   }),
   component: AskPage,
 });
 
+const answers: ChatAnswer[] = [
+  {
+    question: "What was revenue in FY2025?",
+    answer:
+      "HAL reported revenue from operations of ₹30,381 crore for the year ended 31 March 2025, against ₹26,928 crore in the prior year.",
+    claim: "reported",
+    evidence: {
+      document: "HAL Annual Report FY2025",
+      page: 76,
+      note: "statement of profit and loss",
+      excerpt:
+        "Revenue from operations ₹30,381 crore (previous year ₹26,928 crore), comprising sale of products ₹24,910 crore and sale of services ₹5,471 crore.",
+    },
+  },
+  {
+    question: "What is the operating margin trend?",
+    answer:
+      "Operating margin expanded from 21.4% in FY2023 to 24.7% in FY2025, a 3.3 percentage-point improvement over two reported periods.",
+    claim: "calculated",
+    working: "EBITDA ₹7,504 Cr ÷ revenue ₹30,381 Cr = 24.7% · FY23: ₹5,105 Cr ÷ ₹23,855 Cr = 21.4%",
+    evidence: {
+      document: "HAL Annual Report FY2025",
+      page: 74,
+      note: "note 21",
+      excerpt:
+        "Earnings before interest, tax, depreciation and amortisation for the year stood at ₹7,504 crore compared with ₹6,388 crore in the previous financial year.",
+    },
+  },
+  {
+    question: "Are receivables a concern?",
+    answer:
+      "Trade receivables rose 31.2% while revenue rose 12.8%, so collections are lagging sales. Receivable days moved from 118 to 139.",
+    claim: "calculated",
+    working: "₹41,208 Cr ÷ ₹31,405 Cr = +31.2% vs revenue +12.8% · ratio 2.44x",
+    evidence: {
+      document: "HAL Annual Report FY2025",
+      page: 87,
+      note: "note 14",
+      excerpt:
+        "Trade receivables (unsecured, considered good) ₹41,208 crore as at 31 March 2025 against ₹31,405 crore in the previous year. Ageing beyond 180 days: ₹6,842 crore.",
+    },
+  },
+  {
+    question: "Does the narrative match the numbers?",
+    answer:
+      "Not fully. The Directors' Report claims 'robust double-digit growth in order inflows', but the disclosed order book grew 8.4% — below the double-digit threshold the narrative implies.",
+    claim: "interpretation",
+    working: "Order book ₹94,100 Cr vs ₹86,800 Cr = +8.4%",
+    evidence: {
+      document: "HAL Annual Report FY2025",
+      page: 23,
+      note: "directors' report",
+      excerpt:
+        "The Company delivered robust double-digit growth in order inflows during the year under review, supported by sustained defence procurement.",
+    },
+  },
+  {
+    question: "How large are contingent liabilities?",
+    answer:
+      "Contingent liabilities stand at ₹8,940 crore, equal to 21.0% of net worth — significant because they sit off the balance sheet.",
+    claim: "calculated",
+    working: "₹8,940 Cr ÷ net worth ₹42,600 Cr = 21.0%",
+    evidence: {
+      document: "HAL Annual Report FY2025",
+      page: 141,
+      note: "note 38",
+      excerpt:
+        "Claims against the Company not acknowledged as debts: ₹8,940 crore, primarily comprising disputed statutory demands and contractual claims.",
+    },
+  },
+];
+
 function AskPage() {
-  const hal = getCompany("hal")!;
-  const bel = getCompany("bel")!;
-  const hist = sliceYears(hal.history, 5);
-  const revCagr = cagr(hist[0]!.revenue, hist[hist.length - 1]!.revenue, hist.length - 1);
-
-  const answers: CannedAnswer[] = [
-    {
-      question: "Find major risks",
-      points: hal.risks.slice(0, 3).map((r) => ({ heading: r.name, body: r.evidence, page: r.page })),
-      interpretation: hal.risks[0]!.interpretation,
-      document: "HAL Annual Report FY2025",
-    },
-    {
-      question: "Explain revenue growth",
-      intro: hist.map((d) => `${d.year} → ₹${d.revenue.toLocaleString("en-IN")} Cr`).join("  ·  "),
-      points: [
-        {
-          heading: "Reported revenue",
-          body: `Revenue moved from ₹${hist[0]!.revenue.toLocaleString("en-IN")} Cr to ₹${hist[hist.length - 1]!.revenue.toLocaleString("en-IN")} Cr across the indexed reports.`,
-          page: 76,
-        },
-        {
-          heading: "Revenue CAGR",
-          body: `${revCagr.toFixed(1)}% computed as (End/Begin)^(1/n) − 1.`,
-          page: 76,
-          kind: "calculated",
-        },
-      ],
-      interpretation: "Growth accelerated in the most recent two reported periods.",
-      document: "HAL Annual Report FY2025",
-    },
-    {
-      question: "Compare with another company",
-      points: [
-        {
-          heading: "Revenue scale",
-          body: `HAL reported ₹${hal.history[hal.history.length - 1]!.revenue.toLocaleString("en-IN")} Cr versus BEL at ₹${bel.history[bel.history.length - 1]!.revenue.toLocaleString("en-IN")} Cr.`,
-          page: 76,
-        },
-        {
-          heading: "Operating margin",
-          body: `HAL ${hal.history[hal.history.length - 1]!.opMargin}% versus BEL ${bel.history[bel.history.length - 1]!.opMargin}%.`,
-          page: 58,
-          kind: "calculated",
-        },
-      ],
-      interpretation:
-        "HAL operates at larger scale; BEL shows a faster recent growth rate in the indexed dataset.",
-      document: "HAL & BEL Annual Reports FY2025",
-    },
-    {
-      question: "Analyze management outlook",
-      points: [
-        { heading: "Outlook", body: hal.managementQuote.text, page: hal.managementQuote.page },
-        {
-          heading: hal.themes[0]!.theme,
-          body: hal.themes[0]!.note,
-          page: hal.managementQuote.page,
-          kind: "interpretation",
-        },
-      ],
-      document: "HAL Annual Report FY2025",
-    },
-    {
-      question: "Find unusual changes",
-      points: [
-        {
-          heading: "Margin step-up",
-          body: "Operating margin expanded materially between FY23 and FY24 while revenue growth stayed in the low teens.",
-          page: 74,
-          kind: "calculated",
-        },
-      ],
-      interpretation: "The divergence suggests mix or cost effects rather than volume-led operating leverage.",
-      document: "HAL Annual Report FY2025",
-    },
-  ];
-
   return (
     <AppShell>
       <PageHeader
-        title="Ask FinSight"
-        subtitle="Natural-language queries across indexed companies and documents. Answers return as structured insight cards, not a chat transcript."
+        title="Ask AI"
+        subtitle="Ask in plain language. Every answer is labelled by claim type and linked to the page it came from."
+        badge="Evidence-grounded"
       />
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <AskFinSight
-            scopeLabel="All indexed documents"
-            document="the indexed document set"
-            prompts={answers.map((a) => a.question)}
-            answers={answers}
-          />
-        </div>
-        <div className="space-y-6">
-          <Panel title="Question types supported">
-            {[
-              ["Financial", ["Revenue growth between two years", "Why did profit decline?", "Calculate revenue CAGR"]],
-              ["Business", ["Main revenue sources", "Fastest growing segment", "Management strategy"]],
-              ["Risk", ["Top five risks", "Which risks increased vs last year?"]],
-              ["Comparison", ["Compare this company with TCS", "Which company has better margins?"]],
-            ].map(([g, qs]) => (
-              <div key={g as string} className="mb-4 last:mb-0">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {g as string}
-                </p>
-                <ul className="mt-1.5 space-y-1 text-sm text-muted-foreground">
-                  {(qs as string[]).map((q) => (
-                    <li key={q}>· {q}</li>
-                  ))}
-                </ul>
-              </div>
+      <AskChat answers={answers} />
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+        <Panel title="How to read an answer" subtitle="The claim classification is the method, not decoration">
+          <ul className="space-y-3">
+            {(
+              [
+                [
+                  "reported",
+                  "A figure or sentence lifted verbatim from the document. Checkable by opening the cited page.",
+                ],
+                [
+                  "calculated",
+                  "Computed in code from extracted statement lines. The working is shown so the arithmetic is checkable. The language model never does the maths.",
+                ],
+                [
+                  "interpretation",
+                  "The model's reading of the evidence. It may characterise, compare or caveat — it never introduces a new number.",
+                ],
+              ] as const
+            ).map(([kind, body]) => (
+              <li key={kind} className="flex gap-3">
+                <div className="pt-0.5">
+                  <ProvenanceTag kind={kind} />
+                </div>
+                <p className="text-sm leading-relaxed text-muted-foreground">{body}</p>
+              </li>
             ))}
-          </Panel>
-          <Notice tone="warning">
-            FinSight answers only from retrieved evidence. When the documents do not support an answer,
-            it says the information was not found rather than generating a figure.
-          </Notice>
-        </div>
+          </ul>
+        </Panel>
+        <Notice tone="warning">
+          FinSight answers only from retrieved evidence. When the documents do not support an answer it
+          says so rather than generating a figure.
+        </Notice>
       </div>
     </AppShell>
   );

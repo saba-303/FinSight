@@ -1,203 +1,191 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowUpRight, FileDown, GitCompareArrows, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { AppShell } from "@/components/AppShell";
+import { Panel, StatCard, Citation, Notice } from "@/components/primitives";
+import { AnomalyBadge, AnomalyRow } from "@/components/AnomalyFeed";
+import { RevenueMarginChart, HealthRadar } from "@/components/charts";
 import {
-  Building2,
-  FileText,
-  Sparkles,
-  Bookmark,
-  ArrowUpRight,
-  TrendingUp,
-  ShieldAlert,
-  Activity,
-  Users,
-} from "lucide-react";
-import { AppShell, PageHeader } from "@/components/AppShell";
-import { Panel, WhyRow, CompanyTypeBadge } from "@/components/primitives";
-import { MiniSpark } from "@/components/charts";
-import { companies, documents, insights, researchWorkspaces, sliceYears } from "@/data/finsight";
+  anomaliesFor,
+  cagr,
+  documents,
+  getCompany,
+  pct,
+  sliceYears,
+  yoy,
+} from "@/data/finsight";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard — FinSight Financial Intelligence" },
+      { title: "HAL Company Dashboard — Anomalies & Metrics | FinSight" },
       {
         name: "description",
         content:
-          "Your FinSight research dashboard: companies analysed, reports uploaded, AI insights generated and recent document analyses.",
+          "Company dashboard for Hindustan Aeronautics: revenue, net margin, ROE and debt/equity, a five-year revenue and margin trend, and an anomaly feed with page-level citations.",
       },
-      { property: "og:title", content: "FinSight Dashboard" },
+      { property: "og:title", content: "HAL Company Dashboard — FinSight" },
       {
         property: "og:description",
-        content: "Companies analysed, reports uploaded and AI insights in one research workspace.",
+        content: "Metric cards, five-year trends and anomaly flags, each tied to a cited page.",
       },
     ],
   }),
   component: Dashboard,
 });
 
-const kpis = [
-  { label: "Companies Analyzed", value: "7", icon: Building2, note: "3 sectors covered" },
-  { label: "Reports Uploaded", value: "5", icon: FileText, note: "1,156 pages indexed" },
-  { label: "Insights Generated", value: "38", icon: Sparkles, note: "All evidence-linked" },
-  { label: "Saved Companies", value: "4", icon: Bookmark, note: "Across 3 workspaces" },
-];
-
-const kindIcon = {
-  Growth: TrendingUp,
-  Profitability: Activity,
-  Risk: ShieldAlert,
-  Management: Users,
-  Anomaly: Sparkles,
-} as const;
+const sections = ["Overview", "Financials", "Notes", "Governance"] as const;
 
 function Dashboard() {
+  const c = getCompany("hal")!;
+  const flags = anomaliesFor("hal");
+  const [section, setSection] = useState<(typeof sections)[number]>("Overview");
+
+  const data = sliceYears(c.history, 5);
+  const first = data[0]!;
+  const last = data[data.length - 1]!;
+  const prev = data[data.length - 2] ?? first;
+  const revCagr = cagr(first.revenue, last.revenue, data.length - 1);
+  const roeVal = (last.netProfit / last.equity) * 100;
+
   return (
     <AppShell>
-      <PageHeader
-        title="Research Dashboard"
-        subtitle="Sample workspace data. Insight cards are generated from indexed documents and computed metrics."
-        badge="Prototype data"
-        right={
-          <>
+      {/* Company header */}
+      <div className="panel mb-5 p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-2xl font-semibold tracking-tight">{c.name}</h1>
+              <AnomalyBadge count={flags.length} />
+            </div>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {c.sector} · {c.industry} · Latest report: {c.latestReport} · 312 pages indexed
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <Link
-              to="/upload"
-              className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              to="/ask"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary"
             >
-              Upload Report
+              <Sparkles className="size-3.5" /> Ask AI
             </Link>
             <Link
               to="/compare"
-              className="rounded-md border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm transition-colors hover:bg-secondary"
             >
-              Compare
+              <GitCompareArrows className="size-3.5" /> Compare peers
             </Link>
-          </>
-        }
-      />
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((k) => (
-          <div key={k.label} className="panel p-5">
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">{k.label}</p>
-              <k.icon className="size-4 text-primary" />
-            </div>
-            <p className="num mt-3 text-3xl font-semibold">{k.value}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{k.note}</p>
+            <Link
+              to="/reports"
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
+            >
+              <FileDown className="size-3.5" /> Export report
+            </Link>
           </div>
-        ))}
+        </div>
+
+        <nav className="mt-4 flex gap-1 overflow-x-auto border-t border-border pt-3">
+          {sections.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setSection(s)}
+              className={`shrink-0 rounded-md px-3 py-1.5 text-sm transition-colors ${
+                section === s
+                  ? "bg-primary/[0.08] font-medium text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {s}
+            </button>
+          ))}
+          <Link
+            to="/companies/$slug"
+            params={{ slug: c.slug }}
+            className="ml-auto hidden shrink-0 items-center gap-1 px-3 py-1.5 text-sm text-primary sm:inline-flex"
+          >
+            Full profile <ArrowUpRight className="size-3.5" />
+          </Link>
+        </nav>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      {/* Metric cards */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          label="Revenue (FY26)"
+          value={`₹${last.revenue.toLocaleString("en-IN")} Cr`}
+          delta={pct(yoy(last.revenue, prev.revenue))}
+          kind="reported"
+        />
+        <StatCard label="Net margin" value={`${last.netMargin}%`} kind="calculated" hint="net profit ÷ revenue" />
+        <StatCard label="ROE" value={`${roeVal.toFixed(1)}%`} kind="calculated" hint="net profit ÷ equity" />
+        <StatCard
+          label="Debt / Equity"
+          value={(last.debt / last.equity).toFixed(2)}
+          kind="calculated"
+          hint="total debt ÷ equity"
+        />
+      </div>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-3">
+        <div className="space-y-5 lg:col-span-2">
           <Panel
-            title="Insight Cards"
-            subtitle="Automatically surfaced from documents and computed metrics"
+            title="Revenue and operating margin"
+            subtitle="Five reported periods · ₹ crore and % of revenue"
+            right={<span className="num text-xs text-muted-foreground">CAGR {revCagr.toFixed(1)}%</span>}
           >
-            <div className="grid gap-3 md:grid-cols-2">
-              {insights.map((ins) => {
-                const Icon = kindIcon[ins.kind];
-                return (
-                  <article key={ins.title} className="rounded-md border border-border bg-surface-2 p-4">
-                    <div className="flex items-center gap-2">
-                      <Icon className="size-3.5 text-primary" />
-                      <span className="text-[11px] font-medium uppercase tracking-wide text-primary">
-                        {ins.kind} Insight
-                      </span>
-                    </div>
-                    <h3 className="mt-2 text-sm font-medium leading-snug">{ins.title}</h3>
-                    <p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">{ins.body}</p>
-                    <Link
-                      to="/companies/$slug"
-                      params={{ slug: ins.slug }}
-                      className="mt-3 inline-flex items-center gap-1 text-xs text-primary"
-                    >
-                      {ins.company} <ArrowUpRight className="size-3" />
-                    </Link>
-                    <WhyRow why={ins.why} source={ins.source} />
-                  </article>
-                );
-              })}
+            <RevenueMarginChart data={data} />
+            <div className="mt-3">
+              <Citation doc="HAL Annual Report FY2025" page={76} note="statement of P&L" />
             </div>
           </Panel>
 
-          <Panel title="Recent Analyses" subtitle="Documents processed in this workspace">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
-                    <th className="pb-2 font-medium">Document</th>
-                    <th className="pb-2 font-medium">Company</th>
-                    <th className="pb-2 font-medium">Type</th>
-                    <th className="pb-2 text-right font-medium">Pages</th>
-                    <th className="pb-2 text-right font-medium">Uploaded</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {documents.map((d) => (
-                    <tr key={d.id} className="border-b border-border/60 last:border-0">
-                      <td className="py-2.5">
-                        <Link
-                          to="/documents/$id"
-                          params={{ id: d.id }}
-                          className="text-sm transition-colors hover:text-primary"
-                        >
-                          {d.file}
-                        </Link>
-                      </td>
-                      <td className="py-2.5 text-muted-foreground">{d.company}</td>
-                      <td className="py-2.5 text-muted-foreground">{d.type}</td>
-                      <td className="num py-2.5 text-right">{d.pages}</td>
-                      <td className="py-2.5 text-right text-muted-foreground">{d.uploaded}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          <Panel
+            title="Anomaly feed"
+            subtitle="Each flag ties to a specific, checkable number — expand to see the arithmetic and the source passage"
+            right={<span className="num text-xs text-muted-foreground">{flags.length} flags</span>}
+          >
+            <div className="space-y-2.5">
+              {flags.map((a) => (
+                <AnomalyRow key={a.id} a={a} />
+              ))}
             </div>
           </Panel>
         </div>
 
-        <div className="space-y-6">
-          <Panel title="Saved Companies" subtitle="Quick access to tracked entities">
-            <div className="space-y-2">
-              {companies.slice(0, 5).map((c) => (
-                <Link
-                  key={c.slug}
-                  to="/companies/$slug"
-                  params={{ slug: c.slug }}
-                  className="block rounded-md border border-border bg-surface-2 p-3 transition-colors hover:border-primary/40"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-medium">{c.name}</p>
-                      <p className="text-xs text-muted-foreground">{c.industry}</p>
-                    </div>
-                    <CompanyTypeBadge type={c.type} />
-                  </div>
-                  <div className="mt-2">
-                    <MiniSpark data={sliceYears(c.history, 6)} dataKey="revenue" />
-                  </div>
-                </Link>
-              ))}
+        <div className="space-y-5">
+          <Panel title="Financial health" subtitle="Computed sub-scores, not a recommendation">
+            <div className="flex items-baseline gap-2">
+              <span className="num text-4xl font-semibold text-primary">{c.health.total}</span>
+              <span className="text-sm text-muted-foreground">/ 100</span>
+            </div>
+            <div className="mt-4">
+              <HealthRadar data={c.health.dims} height={230} />
             </div>
           </Panel>
 
-          <Panel title="Research Workspaces">
+          <Panel title="Indexed documents">
             <div className="space-y-2">
-              {researchWorkspaces.map((w) => (
+              {documents.slice(0, 4).map((d) => (
                 <Link
-                  key={w.id}
-                  to="/research"
-                  className="block rounded-md border border-border bg-surface-2 p-3 transition-colors hover:border-primary/40"
+                  key={d.id}
+                  to="/documents/$id"
+                  params={{ id: d.id }}
+                  className="block rounded-md border border-border bg-surface p-3 transition-colors hover:border-primary/40"
                 >
-                  <p className="text-sm font-medium">{w.title}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {w.documents.length} documents · {w.queries.length} saved queries · {w.insights}{" "}
-                    insights
+                  <p className="truncate text-sm">{d.file}</p>
+                  <p className="num mt-1 text-xs text-muted-foreground">
+                    {d.pages} pages · {d.tables} tables · {d.uploaded}
                   </p>
                 </Link>
               ))}
             </div>
           </Panel>
+
+          <Notice>
+            Prototype dataset. All figures are sample data and every claim shown carries a source
+            citation.
+          </Notice>
         </div>
       </div>
     </AppShell>
