@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { UploadCloud, FileText, CheckCircle2, Loader2, Plus, ArrowRight } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle2, Loader2, Plus, ArrowRight, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { AppShell, PageHeader } from "@/components/AppShell";
 import { Panel, Notice } from "@/components/primitives";
 import { documents } from "@/data/finsight";
+import { chunkPages, saveDoc, type StoredDoc } from "@/lib/docstore";
+import { extractPdf } from "@/lib/pdf-extract";
 
 export const Route = createFileRoute("/upload")({
   head: () => ({
@@ -27,10 +29,10 @@ export const Route = createFileRoute("/upload")({
 const stages = [
   "Uploading",
   "Extracting text",
-  "Identifying tables",
+  "Extracting pages",
   "Segmenting pages",
   "Indexing document",
-  "Generating embeddings",
+  "Saving to library",
   "Ready for analysis",
 ];
 
@@ -43,30 +45,120 @@ const docTypes = [
   "Financial Statement",
 ];
 
-function UploadPage() {
-  const [files, setFiles] = useState<string[]>([]);
-  const [stage, setStage] = useState(-1);
-  const [drag, setDrag] = useState(false);
+type Job = {
+  key: string;
+  file: File;
+  company: string;
+  year: string;
+  type: string;
+  status: "queued" | "processing" | "done" | "error";
+  stage: number;
+  progress: number;
+  error?: string;
+  result?: StoredDoc;
+};
 
-  const startDemo = (names: string[]) => {
-    setFiles(names);
-    setStage(0);
-    names.forEach(() => {});
-    stages.forEach((_, i) => setTimeout(() => setStage(i), (i + 1) * 650));
+const MAX = 50 * 1024 * 1024;
+
+function guessMeta(name: string) {
+  const year = name.match(/20\d{2}/)?.[0] ?? String(new Date().getFullYear());
+  const lower = name.toLowerCase();
+  const type = lower.includes("present")
+    ? "Investor Presentation"
+    : lower.match(/q[1-4]|quarter/)
+      ? "Quarterly Report"
+      : lower.includes("earning")
+        ? "Earnings Report"
+        : lower.includes("esg")
+          ? "ESG Report"
+          : "Annual Report";
+  const company = name
+    .replace(/\.pdf$/i, "")
+    .replace(/20\d{2}/g, "")
+    .replace(/annual|report|quarterly|investor|presentation|earnings|esg|q[1-4]/gi, "")
+    .replace(/[_-]+/g, " ")
+    .trim();
+  return { year, type, company: company || "Unnamed company" };
+}
+
+function UploadPage() {
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [drag, setDrag] = useState(false);
+  const [rejected, setRejected] = useState<string[]>([]);
+
+  const patch = (key: string, p: Partial<Job>) =>
+    setJobs((js) => js.map((j) => (j.key === key ? { ...j, ...p } : j)));
+
+  const addFiles = (list: File[]) => {
+    const bad: string[] = [];
+    const ok: Job[] = [];
+    for (const f of list) {
+      if (f.type !== "application/pdf" && !f.name.toLowerCase().endsWith(".pdf"))
+        bad.push(`${f.name}: not a PDF`);
+      else if (f.size > MAX) bad.push(`${f.name}: exceeds 50 MB`);
+      else
+        ok.push({
+          key: `${f.name}-${f.size}-${Date.now()}-${Math.random()}`,
+          file: f,
+          ...guessMeta(f.name),
+          status: "queued",
+          stage: -1,
+          progress: 0,
+        });
+    }
+    setRejected(bad);
+    setJobs((js) => [...js, ...ok]);
+  };
+
+  const process = async (job: Job) => {
+    try {
+      patch(job.key, { status: "processing", stage: 0, progress: 0, error: undefined });
+      patch(job.key, { stage: 1 });
+      const pages = await extractPdf(job.file, (d, t) =>
+        patch(job.key, { progress: Math.round((d / t) * 100) }),
+      );
+      patch(job.key, { stage: 3 });
+      const empty = pages.filter((p) => p.chars < 20).length;
+      const ocrRequired = pages.length > 0 && empty / pages.length > 0.6;
+      patch(job.key, { stage: 4 });
+      const meta = { document: job.file.name, company: job.company, year: job.year, docType: job.type };
+      const chunks = chunkPages(pages, meta);
+      const doc: StoredDoc = {
+        id: `up-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+        file: job.file.name,
+        company: job.company,
+        year: job.year,
+        type: job.type,
+        size: job.file.size,
+        uploaded: new Date().toISOString(),
+        pageCount: pages.length,
+        pages,
+        chunks,
+        ocrRequired,
+        emptyPages: empty,
+      };
+      patch(job.key, { stage: 5 });
+      await saveDoc(doc);
+      patch(job.key, { stage: 6, status: "done", result: doc });
+    } catch (e) {
+      patch(job.key, {
+        status: "error",
+        error: e instanceof Error ? e.message : "Could not read this PDF",
+      });
+    }
   };
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDrag(false);
-    const names = Array.from(e.dataTransfer.files).map((f) => f.name);
-    startDemo(names.length ? names : ["HAL_Annual_Report_2025.pdf"]);
+    addFiles(Array.from(e.dataTransfer.files));
   };
 
   return (
     <AppShell>
       <PageHeader
         title="Analyze Your Financial Report"
-        subtitle="Upload one or more PDFs. Processing is simulated in this prototype — the pipeline below mirrors the production architecture."
+        subtitle="Upload PDFs. Text is extracted page by page in your browser, chunked with metadata and saved to your document library."
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -86,17 +178,17 @@ function UploadPage() {
               <input
                 type="file"
                 multiple
-                accept="application/pdf"
+                accept="application/pdf,.pdf"
                 className="hidden"
                 onChange={(e) => {
-                  const names = Array.from(e.target.files ?? []).map((f) => f.name);
-                  startDemo(names.length ? names : ["HAL_Annual_Report_2025.pdf"]);
+                  addFiles(Array.from(e.target.files ?? []));
+                  e.target.value = "";
                 }}
               />
               <UploadCloud className="size-8 text-primary" />
               <p className="mt-3 text-sm font-medium">Drag and drop PDF here</p>
               <p className="mt-1 text-xs text-muted-foreground">
-                or click to browse · multiple files supported · max 50 MB each
+                or click to browse · PDF only · multiple files · max 50 MB each
               </p>
               <div className="mt-4 flex flex-wrap justify-center gap-1.5">
                 {docTypes.map((t) => (
@@ -109,79 +201,135 @@ function UploadPage() {
                 ))}
               </div>
             </label>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  startDemo([
-                    "HAL_Annual_Report_2025.pdf",
-                    "HAL_Annual_Report_2024.pdf",
-                    "HAL_Investor_Presentation_2025.pdf",
-                  ])
-                }
-                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-              >
-                Run sample multi-document upload
-              </button>
-              <span className="text-xs text-muted-foreground">
-                Loads three HAL documents to demonstrate multi-year analysis.
-              </span>
-            </div>
+            {rejected.length > 0 && (
+              <div className="mt-3 space-y-1">
+                {rejected.map((r) => (
+                  <p key={r} className="flex items-center gap-1.5 text-xs text-destructive">
+                    <AlertTriangle className="size-3.5" /> {r}
+                  </p>
+                ))}
+              </div>
+            )}
           </Panel>
 
-          {files.length > 0 && (
-            <Panel title="Processing Queue" subtitle="Per-document extraction and indexing">
-              <ul className="mb-5 space-y-2">
-                {files.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
-                  >
-                    <FileText className="size-3.5 text-muted-foreground" />
-                    {f}
-                    <span className="num ml-auto text-xs text-muted-foreground">
-                      {stage >= stages.length - 1 ? "Indexed" : "Processing"}
-                    </span>
-                  </li>
+          {jobs.length > 0 && (
+            <Panel title="Processing Queue" subtitle="Confirm details, then process each document">
+              <div className="space-y-4">
+                {jobs.map((j) => (
+                  <div key={j.key} className="rounded-md border border-border bg-surface-2 p-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileText className="size-3.5 text-muted-foreground" />
+                      <span className="font-medium">{j.file.name}</span>
+                      <span className="num text-xs text-muted-foreground">
+                        {(j.file.size / 1024 / 1024).toFixed(1)} MB
+                      </span>
+                      <span className="num ml-auto text-xs text-muted-foreground">
+                        {j.status === "done" ? "Indexed" : j.status === "error" ? "Failed" : j.status === "processing" ? `${j.progress}%` : "Ready"}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                      <input
+                        value={j.company}
+                        disabled={j.status === "processing" || j.status === "done"}
+                        onChange={(e) => patch(j.key, { company: e.target.value })}
+                        placeholder="Company name"
+                        className="h-9 rounded-md border border-input bg-surface px-3 text-sm outline-none focus:border-ring/60"
+                      />
+                      <input
+                        value={j.year}
+                        disabled={j.status === "processing" || j.status === "done"}
+                        onChange={(e) => patch(j.key, { year: e.target.value })}
+                        placeholder="Financial year"
+                        className="num h-9 rounded-md border border-input bg-surface px-3 text-sm outline-none focus:border-ring/60"
+                      />
+                      <select
+                        value={j.type}
+                        disabled={j.status === "processing" || j.status === "done"}
+                        onChange={(e) => patch(j.key, { type: e.target.value })}
+                        className="h-9 rounded-md border border-input bg-surface px-2 text-sm outline-none"
+                      >
+                        {docTypes.map((t) => (
+                          <option key={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {j.status !== "queued" && (
+                      <>
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-border">
+                          <div
+                            className="h-full bg-primary transition-all"
+                            style={{ width: `${j.status === "done" ? 100 : Math.max(5, (j.stage / 6) * 100 * 0.4 + j.progress * 0.6)}%` }}
+                          />
+                        </div>
+                        <ol className="mt-3 grid gap-1.5 sm:grid-cols-2">
+                          {stages.map((s, i) => {
+                            const done = j.stage > i || j.status === "done";
+                            const active = j.stage === i && j.status === "processing";
+                            return (
+                              <li key={s} className="flex items-center gap-2 text-xs">
+                                {done ? (
+                                  <CheckCircle2 className="size-3.5 text-success" />
+                                ) : active ? (
+                                  <Loader2 className="size-3.5 animate-spin text-primary" />
+                                ) : (
+                                  <span className="size-3.5 rounded-full border border-border" />
+                                )}
+                                <span className={done || active ? "" : "text-muted-foreground"}>{s}</span>
+                              </li>
+                            );
+                          })}
+                        </ol>
+                      </>
+                    )}
+
+                    {j.status === "error" && (
+                      <p className="mt-3 text-xs text-destructive">{j.error}</p>
+                    )}
+
+                    {(j.status === "queued" || j.status === "error") && (
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => process(j)}
+                          disabled={!j.company.trim() || !j.year.trim()}
+                          className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
+                        >
+                          {j.status === "error" ? "Retry" : "Process document"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setJobs((js) => js.filter((x) => x.key !== j.key))}
+                          className="rounded-md border border-border px-3 py-1.5 text-sm hover:bg-secondary"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
+
+                    {j.result && (
+                      <div className={`mt-3 rounded-md border p-3 ${j.result.ocrRequired ? "border-warning/40 bg-warning/10" : "border-success/30 bg-success/10"}`}>
+                        <p className={`text-sm font-medium ${j.result.ocrRequired ? "text-warning" : "text-success"}`}>
+                          {j.result.ocrRequired
+                            ? "OCR required — this PDF looks scanned or has no extractable text."
+                            : "Document processed successfully."}
+                        </p>
+                        <p className="num mt-1 text-xs text-muted-foreground">
+                          Pages: {j.result.pageCount} · Chunks indexed: {j.result.chunks.length} · Pages without text: {j.result.emptyPages}
+                        </p>
+                        <Link
+                          to="/documents/$id"
+                          params={{ id: j.result.id }}
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground"
+                        >
+                          Open document workspace <ArrowRight className="size-3.5" />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </ul>
-
-              <ol className="space-y-2">
-                {stages.map((s, i) => {
-                  const done = stage > i;
-                  const active = stage === i;
-                  return (
-                    <li key={s} className="flex items-center gap-3 text-sm">
-                      {done ? (
-                        <CheckCircle2 className="size-4 text-success" />
-                      ) : active ? (
-                        <Loader2 className="size-4 animate-spin text-primary" />
-                      ) : (
-                        <span className="size-4 rounded-full border border-border" />
-                      )}
-                      <span className={done || active ? "" : "text-muted-foreground"}>{s}</span>
-                      {done && <span className="num ml-auto text-xs text-success">done</span>}
-                    </li>
-                  );
-                })}
-              </ol>
-
-              {stage >= stages.length - 1 && (
-                <div className="mt-5 rounded-md border border-success/30 bg-success/8 p-4">
-                  <p className="text-sm font-medium text-success">Document processed successfully.</p>
-                  <p className="num mt-1 text-xs text-muted-foreground">
-                    Pages: 312 · Tables detected: 47 · Financial sections detected: 12
-                  </p>
-                  <Link
-                    to="/documents/$id"
-                    params={{ id: "hal-ar-2025" }}
-                    className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
-                  >
-                    Open document workspace <ArrowRight className="size-3.5" />
-                  </Link>
-                </div>
-              )}
+              </div>
             </Panel>
           )}
 
