@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileText, Upload } from "lucide-react";
 import { AppShell, PageHeader } from "@/components/AppShell";
+import { useEffect, useState } from "react";
 import { documents } from "@/data/finsight";
+import { deleteDoc, listDocs, type StoredDoc } from "@/lib/docstore";
 
 export const Route = createFileRoute("/documents/")({
   head: () => ({
@@ -20,6 +22,10 @@ export const Route = createFileRoute("/documents/")({
 });
 
 function DocsPage() {
+  const [mine, setMine] = useState<StoredDoc[]>([]);
+  useEffect(() => {
+    listDocs().then(setMine).catch(() => {});
+  }, []);
   return (
     <AppShell>
       <PageHeader
@@ -34,6 +40,47 @@ function DocsPage() {
           </Link>
         }
       />
+      {mine.length > 0 && (
+        <>
+          <h2 className="mb-3 text-sm font-semibold">Your uploads</h2>
+          <div className="mb-8 grid gap-3 lg:grid-cols-2">
+            {mine.map((d) => (
+              <div key={d.id} className="panel relative p-5 transition-colors hover:border-primary/40">
+                <Link to="/documents/$id" params={{ id: d.id }} className="block">
+                  <div className="flex items-start gap-3">
+                    <FileText className="mt-0.5 size-4 text-primary" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{d.file}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {d.company} · {d.type} · {d.year}
+                      </p>
+                    </div>
+                    <span
+                      className={`rounded border px-2 py-0.5 text-[11px] ${d.ocrRequired ? "border-warning/40 bg-warning/10 text-warning" : "border-success/40 bg-success/10 text-success"}`}
+                    >
+                      {d.ocrRequired ? "OCR required" : "Indexed"}
+                    </span>
+                  </div>
+                  <p className="num mt-3 text-xs text-muted-foreground">
+                    {d.pageCount} pages · {d.chunks.length} chunks · uploaded {new Date(d.uploaded).toLocaleDateString()}
+                  </p>
+                </Link>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await deleteDoc(d.id);
+                    setMine((m) => m.filter((x) => x.id !== d.id));
+                  }}
+                  className="absolute bottom-4 right-4 text-xs text-muted-foreground hover:text-destructive"
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+          <h2 className="mb-3 text-sm font-semibold">Sample documents</h2>
+        </>
+      )}
       <div className="grid gap-3 lg:grid-cols-2">
         {documents.map((d) => (
           <Link
