@@ -1,3 +1,4 @@
+import { UploadedDocPage } from "@/components/UploadedDocPage";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { CheckCircle2, FileDown, ArrowLeft } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
@@ -9,10 +10,19 @@ import { cagr, getCompany, getDocument, sliceYears } from "@/data/finsight";
 export const Route = createFileRoute("/documents/$id")({
   loader: ({ params }) => {
     const doc = getDocument(params.id);
-    if (!doc) throw notFound();
-    return { doc };
+    if (!doc && !params.id.startsWith("up-")) throw notFound();
+    return { doc: doc ?? null, id: params.id };
   },
   head: ({ loaderData }) => {
+    if (!loaderData?.doc)
+      return {
+        meta: [
+          { title: "Uploaded Document — FinSight" },
+          { name: "description", content: "Your uploaded financial document with page-level extracted text and citations." },
+          { property: "og:title", content: "Uploaded Document — FinSight" },
+          { property: "og:description", content: "Page-level extracted text, indexed for citation." },
+        ],
+      };
     if (!loaderData)
       return {
         meta: [{ title: "Document unavailable — FinSight" }, { name: "robots", content: "noindex" }],
@@ -33,7 +43,12 @@ export const Route = createFileRoute("/documents/$id")({
 });
 
 function DocumentPage() {
-  const { doc } = Route.useLoaderData();
+  const { doc, id } = Route.useLoaderData();
+  if (!doc) return <UploadedDocPage id={id} />;
+  return <SampleDocPage doc={doc} />;
+}
+
+function SampleDocPage({ doc }: { doc: NonNullable<ReturnType<typeof getDocument>> }) {
   const company = doc.companySlug ? getCompany(doc.companySlug) : undefined;
   const hist = company ? sliceYears(company.history, 5) : [];
   const revCagr =
