@@ -54,7 +54,7 @@ type Job = {
   status: "queued" | "processing" | "done" | "error";
   stage: number;
   progress: number;
-  error?: string;
+  error?: string | undefined;
   result?: StoredDoc;
 };
 
