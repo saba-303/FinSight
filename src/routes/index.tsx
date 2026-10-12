@@ -63,7 +63,7 @@ function HeroVisual() {
             <FileText className="size-4 text-primary" />
             <p className="text-xs font-medium">Annual Report FY2025</p>
           </div>
-          <span className="num text-[11px] text-muted-foreground">312 pages</p>
+          <span className="num text-[11px] text-muted-foreground">312 pages</span>
         </div>
 
         {/* stylised page text */}
