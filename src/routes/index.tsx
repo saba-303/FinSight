@@ -78,8 +78,7 @@ function HeroVisual() {
           <div className="h-2 w-[78%] rounded-full bg-surface-2" />
         </div>
 
-        <div className="mt-5 flex items-center justify-between border-t border-border pt-3">
-          <span className="text-[11px] text-muted-foreground">Extracted & cross-checked</span>
+        <div className="mt-5 flex items-center justify-end border-t border-border pt-3">
           <span className="num rounded border border-border bg-surface-2 px-2 py-0.5 text-[11px] text-muted-foreground">
             pg. 87, note 14
           </span>
